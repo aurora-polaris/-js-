@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no"/>
+		<title></title>
+		<style type="text/css">
+			*{
+				margin: 0;
+				padding: 0;
+			}
+			html,body{
+				height: 100%;
+				overflow: hidden;
+			}
+			#header,#bigH{
+				height: 2rem;
+				width: 100%;
+				background: black;
+				color: #fff;
+				line-height: 2rem;
+				text-align: center;
+				font-size: 0.8rem;
+				font-family: '宋体';
+			}
+			#wrap{
+				position: absolute;
+				top: 2rem;
+				bottom: 0;
+				left: 0;
+				right: 0;
+				overflow: hidden;
+			}
+			#content{
+				position: relative;
+			}
+			#list{
+				list-style: none;
+				overflow: hidden;
+			}
+			#list li{
+				float: left;
+				width: 7rem;
+				height: 7rem;
+				margin: 0.5rem;	
+				background-color: #eee;	
+				background-image: url(img/loadingImg.gif);
+				background-repeat:no-repeat;	
+				background-position: center;	
+				border-radius: 10px;
+			}
+			#list li img{
+				width: 100%;
+				border-radius: 10px;
+				opacity: 0;
+			}
+			#footer{
+				position: absolute;
+				left: 0;
+				bottom: -4rem;
+				width: 100%;
+				height: 4rem;
+				line-height: 4rem;
+				text-align: center;
+			}
+			#scrollBar{
+				position: absolute;
+				top: 0;
+				right: 0;
+				width: 4px;
+				height: 100%;
+				background: gray;
+				opacity: 0;
+			}
+			#bigImg{
+				position: absolute;
+				top: 0;
+				bottom: 0;
+				left: 0;
+				right: 0;
+				background:#eee;
+				transform: scale(0);
+				transition: 1s transform;
+			}
+			#bigH{
+				padding: 0 10px;
+				box-sizing: border-box;
+			}
+			#bigImg a{
+				float: right;
+				text-decoration: none;
+				color: #fff;				
+				font-size: 1rem;
+				font-family: "微软雅黑";
+				-webkit-tap-highlight-color: rgba(0,0,0,0);
+			}
+			#bigImg img{
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				width: 12rem;
+				height: 12rem;
+				background: deeppink;
+				margin: -6rem 0 0 -6rem;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="header">三国女将</div>
+		<div id="wrap">
+			<div id="content">
+				<ul id="list">
+					<!--<li>
+						<img src="img/1.jpg"/>
+					</li>-->
+					
+				</ul>
+				<div id="footer">上滑加载更多</div>
+			</div>
+			<div id="scrollBar">
+				
+			</div>
+		</div>
+		
+		<div id="bigImg">
+			<div id="bigH">				
+					大图预览			
+				<a href="javascript:;">x</a>
+			</div>
+			<img/>
+		</div>
+	</body>
+	<script type="text/javascript" src="js/transformCss.js"></script>
+	<script type="text/javascript" src="js/drag.js"></script>
+	<script type="text/javascript" src="js/tools.js"></script>
+	<script type="text/javascript">
+		document.addEventListener('touchstart',function(event){
+			event.preventDefault();
+		});
+		
+		(function(){
+			var styleN = document.createElement('style');
+			var width = document.documentElement.clientWidth/16;
+			styleN.innerHTML = 'html{font-size: '+ width +'px !important;}';
+			document.head.appendChild(styleN);
+		})();
+		
+		
+		//创建图片路径
+		var urlArr = [];		
+		for (var i=0;i<100;i++) {
+			urlArr.push('img/'+ (i%18+1) +'.jpg');
+		};
+		
+		//获取元素
+		var list = document.getElementById('list');
+		var header = document.getElementById('header');
+		var wrap = document.getElementById('wrap');
+		var content = document.getElementById('content');
+		var footer = document.getElementById('footer');
+		var scrollBar = document.getElementById('scrollBar');
+		var bigImg = document.getElementById('bigImg');
+		var close = document.querySelector('#bigImg a');
+		var imgB = document.querySelector('#bigImg img');
+		
+		
+		//大图隐藏
+//		bigImg.style.transition = '1s';
+//		transformCss(bigImg,'scale',0);
+		
+		close.addEventListener('touchend',function(){
+			transformCss(bigImg,'scale',0);
+			
+		});
+		
+		//footer高度
+		var footerH = footer.offsetHeight;
+		//footer隐藏
+		transformCss(footer,'scale',0);
+		
+		//是否在底部
+		var isBottom = false;
+		
+		//创建li
+		var length = 12;
+		//每次创建li开始的数量
+		var start = 0;
+		createLi();
+		function createLi(){
+			//限定li 范围
+			if(start >= urlArr.length){
+				
+				footer.innerHTML = '叶叔叔，别瞅了。。。';
+				
+				setTimeout(function(){
+					
+					//把主题内容拉回来
+					content.style.transition = '0.5s';
+					var minH = content.offsetHeight - wrap.clientHeight;
+					transformCss(content,'translateY',-minH);
+					//footer隐藏
+					transformCss(footer,'scale',0);
+				},2000);
+				
+				return;
+				
+			};
+			
+			//每次循环总次数
+			var end = start + length;
+			
+			end = end >= urlArr.length ? urlArr.length : end;
+			
+			for (var i = start;i<end;i++) {
+				var li = document.createElement('li');
+				//大图预览
+				li.src = urlArr[i];
+				//是否有相应的标记图片
+				li.isLoad = false;
+				
+				
+				//误触
+				var flagBig = false;
+				li.addEventListener('touchmove',function(){
+					flagBig = true;
+				});
+				li.addEventListener('touchend',function(){
+					if(!flagBig){
+						//变换基点
+						var left = this.getBoundingClientRect().left;
+						var top = this.getBoundingClientRect().top;
+						
+						bigImg.style.transformOrigin = left + 'px '+ top + 'px';
+						
+						//图片显示
+						imgB.src = this.src;
+						//大图显示
+						transformCss(bigImg,'scale',1);
+					};
+					//重置
+					flagBig = false;
+				});
+				
+				
+				
+				list.appendChild(li);
+			};
+			start = end;
+			
+			//懒加载
+			lazyLoad();
+			
+		};
+		
+		function lazyLoad(){
+			var minT = header.offsetHeight;
+			var maxT = document.documentElement.clientHeight;
+			var liNodes = document.querySelectorAll('#list li');
+			
+			for (var i=0;i<liNodes.length;i++) {
+				var top = liNodes[i].getBoundingClientRect().top;
+				
+				if(!liNodes[i].isLoad && minT < top && top < maxT){
+					//创建图片
+					liNodes[i].isLoad = true;
+					createImg(liNodes[i]);
+				};
+			};						
+		};
+		
+		function createImg(li){
+			//对象			
+			var img = new Image();						
+			img.src = li.src;
+			img.onload = function(){
+				img.style.opacity = '1';
+			};
+			img.style.transition = '1s opacity';
+			li.appendChild(img);
+		};
+		
+		//滚动条高度
+		var scale = wrap.clientHeight / content.offsetHeight;
+		scrollBar.style.height = wrap.clientHeight * scale + 'px';
+		//竖向滑屏
+		var callback = {
+			start:function(){
+				var minH = content.offsetHeight - wrap.clientHeight;
+				if(Math.abs(transformCss(content,'translateY')) >= minH){
+					isBottom = true;
+				};
+				
+				scrollBar.style.opacity = '1';
+			},
+			move:function(){
+				if(isBottom){
+					//底部出来了
+					var minH = content.offsetHeight - wrap.clientHeight;
+					var footerScale = (Math.abs(transformCss(content,'translateY')) - minH)/footerH;
+										
+					footerScale = footerScale > 1 ? 1 : footerScale;
+					
+					transformCss(footer,'scale',footerScale);
+					
+				};
+				
+				//懒加载
+				lazyLoad();
+				
+				scrollBar.style.opacity = '1';
+				
+				var scale = wrap.clientHeight / content.offsetHeight;
+				var dis = transformCss(content,'translateY') * scale ;
+				transformCss(scrollBar,'translateY',-dis)
+				
+			},
+			//真正的touchend
+			over:function(){
+				//底部滑动
+				//footer出来
+				var minH = content.offsetHeight - wrap.clientHeight;
+				if(isBottom &&( Math.abs(transformCss(content,'translateY')) - minH) >= footerH){
+					//清除定时器,把回弹禁止掉
+					clearInterval(wrap.timer);
+					
+					//创建li
+					createLi();
+					
+					isBottom = false;
+					
+					//滚动条高度
+					var scale = wrap.clientHeight / content.offsetHeight;
+					scrollBar.style.height = wrap.clientHeight * scale + 'px';
+				};
+				
+			},
+			end:function(){
+				scrollBar.style.opacity = '0';
+			}
+		};
+		wrapDrag(wrap,callback);
+		
+		
+		
+		//大图旋转缩放
+		gestrueImg();
+		function gestrueImg(){
+			
+			var rotateD = 0;
+			//保存上一次scale的值
+			var scaleC = 0;
+			
+			var callback = {
+				start:function(){					
+					rotateD = transformCss(bigImg,'rotate');
+					//读
+					scaleC = transformCss(bigImg,'scale');
+				},
+				change:function(event){
+					
+					//写
+					transformCss(bigImg,'rotate',rotateD + event.rotation);
+					//写
+					transformCss(bigImg,'scale',scaleC * event.scale);
+				}
+			};
+			
+			gesTrue(bigImg,callback)
+			
+		};
+		
+		
+		
+	</script>
+</html>
